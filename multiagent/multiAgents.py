@@ -224,7 +224,67 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def value(state, agentId, remainingCalls, prunings):
+            agentId = agentId % state.getNumAgents()
+            if state.isWin() or state.isLose() or remainingCalls == 0:
+                return self.evaluationFunction(state)
+            if agentId == 0:
+                return maxValue(state, agentId, remainingCalls, prunings)
+            else:
+                return minValue(state, agentId, remainingCalls, prunings)
+
+        def maxValue(state, agentId, remainingCalls, prunings):
+            alpha, beta = prunings
+            maximum = float('-inf')
+            for action in state.getLegalActions(agentId):
+                maximum_in_branch = value(
+                    state.generateSuccessor(agentId, action),
+                    (agentId + 1) % state.getNumAgents(),
+                    remainingCalls - 1,
+                    (alpha, beta),
+                )
+                if maximum_in_branch > maximum:
+                    maximum = maximum_in_branch
+                if maximum > beta:
+                    return maximum
+                alpha = max(alpha, maximum)
+            return maximum
+
+        def minValue(state, agentId, remainingCalls, prunings):
+            alpha, beta = prunings
+            minimum = float('inf')
+            for action in state.getLegalActions(agentId):
+                minimum_in_branch = value(
+                    state.generateSuccessor(agentId, action),
+                    (agentId + 1) % state.getNumAgents(),
+                    remainingCalls - 1,
+                    (alpha, beta),
+                )
+                if minimum_in_branch < minimum:
+                    minimum = minimum_in_branch
+                if minimum < alpha:
+                    return minimum
+                beta = min(beta, minimum)
+            return minimum
+
+        successors_values = []
+        successors = [(action, gameState.generateSuccessor(0, action)) for action in gameState.getLegalActions(0)]
+        alpha, beta = float('-inf'), float('inf')
+        for successor in successors:
+            successorValue = value(
+                successor[1],
+                1,
+                self.depth * gameState.getNumAgents() - 1,
+                (alpha, beta)
+            )
+            if successorValue > beta:
+                return successorValue
+            successors_values.append(successorValue)
+            alpha = max((alpha, successorValue))
+        idx_of_max = successors_values.index(max(successors_values))
+        maxValueOfState = [successor[0] for successor in successors][idx_of_max]
+        return maxValueOfState
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
