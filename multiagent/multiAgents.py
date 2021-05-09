@@ -299,7 +299,50 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def value(state, agentId, remainingCalls):
+            agentId = agentId % state.getNumAgents()
+            if state.isWin() or state.isLose() or remainingCalls == 0:
+                return self.evaluationFunction(state)
+            if agentId == 0:
+                return maxValue(state, agentId, remainingCalls)
+            else:
+                return expectedValue(state, agentId, remainingCalls)
+
+        def maxValue(state, agentId, remainingCalls):
+            maximum = float('-inf')
+            for action in state.getLegalActions(agentId):
+                maximum_in_branch = value(
+                    state.generateSuccessor(agentId, action),
+                    (agentId + 1) % state.getNumAgents(),
+                    remainingCalls - 1,   
+                )
+                if maximum_in_branch > maximum:
+                    maximum = maximum_in_branch
+            return maximum
+
+        def expectedValue(state, agentId, remainingCalls):
+            minimum = float('inf')
+            subbranchValues = []
+            for action in state.getLegalActions(agentId):
+                minimum_in_branch = value(
+                    state.generateSuccessor(agentId, action),
+                    (agentId + 1) % state.getNumAgents(),
+                    remainingCalls - 1,   
+                )
+                subbranchValues.append(minimum_in_branch)
+            if not subbranchValues:
+                return minimum
+            return sum(subbranchValues) / len(subbranchValues)
+
+        successors = [(action, gameState.generateSuccessor(0, action)) for action in gameState.getLegalActions(0)]
+        successors_values = list(map(
+            lambda state: value(state, 1, self.depth * state.getNumAgents() - 1),
+            [successor[1] for successor in successors]
+        ))
+        idx_of_max = successors_values.index(max(successors_values))
+        maxValueOfState = [successor[0] for successor in successors][idx_of_max]
+        return maxValueOfState
 
 def betterEvaluationFunction(currentGameState):
     """
