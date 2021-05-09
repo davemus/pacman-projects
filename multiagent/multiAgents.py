@@ -352,7 +352,50 @@ def betterEvaluationFunction(currentGameState):
       DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    newPos = currentGameState.getPacmanPosition()
+    newFood = currentGameState.getFood()
+    newGhostStates = currentGameState.getGhostStates()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+    
+    try:
+        closestFoodDistance = len(
+            searchAgents
+                .ClosestDotSearchAgent()
+                    .findPathToClosestDot(
+                        currentGameState
+                    )
+        )
+    except:
+        closestFoodDistance = 0
+
+    try:
+        closestScaredGhostDistance = min([
+            searchAgents
+                .mazeDistance(
+                    newPos,
+                    tuple(map(int, ghost.configuration.pos)),
+                successorGameState,
+            )
+            for ghost in newGhostStates if ghost.scaredTimer
+        ])
+    except:
+        closestScaredGhostDistance = 0
+
+    scaredGhostModifier = -closestScaredGhostDistance * 10
+ 
+    try:
+        capsuleSumDistance = sum([searchAgents.mazeDistance(
+            newPos,
+            tuple(map(int, capsule)),
+            successorGameState,
+        ) for capsule in currentGameState.getCapsules()])
+    except:
+        capsuleSumDistance = -5
+    
+    capsuleModifier = -capsuleSumDistance * 5
+
+    foodModifier = -closestFoodDistance
+    return foodModifier + currentGameState.getScore() + capsuleModifier + sum(newScaredTimes)
 
 # Abbreviation
 better = betterEvaluationFunction
